@@ -168,6 +168,37 @@ def Distance():
     print(dist)
     return DistanceMol
 
+def Angulo():
+    Positions = AtomsInfo()
+    if len(Positions) == 77:
+        return 0
+    else:
+        i = 75
+        x1 = float(Positions.loc[i][0])
+        y1 = float(Positions.loc[i][1])
+        z1 = float(Positions.loc[i][2])
+    
+        x2 = float(Positions.loc[i+1][0])
+        y2 = float(Positions.loc[i+1][1])
+        z2 = float(Positions.loc[i+1][2])
+    
+        x3 = float(Positions.loc[i+2][0])
+        y3 = float(Positions.loc[i+2][1])
+        z3 = float(Positions.loc[i+2][2]) 
+
+    a = np.array([x1,y1,z1])
+    b = np.array([x2,y2,z2])
+    c = np.array([x3,y3,z3])
+
+    ba = a - b
+    bc = c - b
+
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(cosine_angle)
+    
+    return np.degrees(angle)
+
+
 
 #---Informações das moléculas que podem ser usadas para alguns cálculos---#
 def InfoMol():
@@ -212,14 +243,18 @@ def NavigateDir():
             print(Folder)
             Files = [x[2] for x in os.walk('.')][0]
             if 'vasprun.xml' in Files:
-                EnergyAdsorbed = Enmax() 
-                Altura = Hight()
-                AdsorptionEnergy=0
-                Dist = 0
-                Angle = 0
-                FileTEX.write('{} & {} & {} & {} & {} & {} \\\ \n'.format(Folder,EnergyAdsorbed, Adsorption_energy, Altura, Dist, Angle) )
+                Check = CheckStringInFile('OUTCAR','reached required accuracy - stopping structural energy minimisation')
+                if Check ==True:
+                    EnergyAdsorbed = Enmax() 
+                    Altura = Hight()
+                    AdsorptionEnergy=0
+                    Dist = 0
+                    Angle = Angulo()  
+                    FileTEX.write('{} & {} & {} & {} & {} & {} \\\ \n'.format(str(Folder),float(EnergyAdsorbed), float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
+                else:
+                    FileTEX.write('{} & Não Convergiu & Não Convergiu & Não Convergiu  & Não Convergiu  \\\ \n'.format(Folder))
             else:
-                FileTEX.write('{} & Não Convergiu & Não Convergiu & Não Convergiu & Não Convergiu  \\\ \n'.format(Folder))
+                FileTEX.write('{} & Não Rodou & Não Rodou & Não Rodou & Não Rodou  \\\ \n'.format(Folder))
 
             os.chdir(Root)
         os.chdir(RootMol)    
