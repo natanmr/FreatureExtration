@@ -28,6 +28,13 @@ def xmlpharser():
     root = tree.getroot()
     return root #Retorna a arvore do xml
     
+#---Pharser de qualquer arquivos---#   
+def openfile(filename):
+    file = open(filename, 'r')
+    lines = file.readlines()
+    return lines    
+    
+#---Checar se uma string está no arquivo---#    
 def CheckStringInFile(File,String):
     with open(File) as f:
         datafile = f.readlines()
@@ -36,7 +43,6 @@ def CheckStringInFile(File,String):
         if String in line:
             return True
     return False  
-
 
 #---Informações da base de átomos---#
 def BasisInfo():
@@ -101,6 +107,18 @@ def Enmax():
     EEotEWntropy = float(EEotEWntropy.text)
     return EEotEWntropy
 
+def FermiEnergy():
+    lines = openfile('OUTCAR')
+    Linesefermi = []
+    # exibe a energia de fermi final
+    for line in lines:
+        if 'E-fermi' in line:
+            Linesefermi.append(line)
+    efermi = Linesefermi[-1].split()[2]
+    print('Fermi energy',efermi)
+    return float(efermi)
+
+
 #---Parâmetro de rede---#
 def a0():    
     positions = AtomsInfo()      
@@ -141,50 +159,75 @@ def Hight():
     H = np.linalg.norm(zS-zMed)
     return H
 
-def Distance():
+def Distance(Mol):
     positions = AtomsInfo()
     LenPositions = int(len(positions))
-    
-    dist = ['Dist','Value'] 
-    for i in range(76,LenPositions):
-        xAtom1 = positions['x'][i-1]
-        yAtom1 = positions['y'][i-1]
-        zAtom1 = positions['z'][i-1]
-        Specie1 = positions['Atom'][i-1]
+    if Mol =='H2' or Mol=='N2' or Mol =='O2': 
+        i = 75
+        xAtom1 = positions['x'][i]
+        yAtom1 = positions['y'][i]
+        zAtom1 = positions['z'][i]
         
-        xAtom2 = positions['x'][i]
-        yAtom2 = positions['y'][i]
-        zAtom2 = positions['z'][i]        
-        Specie2 = positions['Atom'][i]
+        xAtom2 = positions['x'][i+1]
+        yAtom2 = positions['y'][i+1]
+        zAtom2 = positions['z'][i+1]        
         
-        i = i+1
+    elif Mol=='H2O' or Mol =='CO2': 
+        i = 75
+        xAtom1 = positions['x'][i]
+        yAtom1 = positions['y'][i]
+        zAtom1 = positions['z'][i]
         
-        v1 = np.matrix([xAtom1, yAtom1, zAtom1])
-        v2 = np.matrix([xAtom2, yAtom2, zAtom2])
+        xAtom2 = positions['x'][i+2]
+        yAtom2 = positions['y'][i+2]
+        zAtom2 = positions['z'][i+2]        
         
-        DistanceMol = np.linalg.norm(v1-v2)
+    elif Mol=='CH4':
+        i =75 
+        xAtom1 = positions['x'][i+1]
+        yAtom1 = positions['y'][i+1]
+        zAtom1 = positions['z'][i+1]
         
-        dist.append(['{}--{}'.format(Specie1,Specie2), DistanceMol])
-    print(dist)
+        xAtom2 = positions['x'][i+4]
+        yAtom2 = positions['y'][i+4]
+        zAtom2 = positions['z'][i+4]        
+
+    v1 = np.matrix([xAtom1, yAtom1, zAtom1])
+    v2 = np.matrix([xAtom2, yAtom2, zAtom2])
+        
+    DistanceMol = np.linalg.norm(v1-v2)
     return DistanceMol
 
-def Angulo():
+def Angulo(Mol):
     Positions = AtomsInfo()
+    print(Positions)
     if len(Positions) == 77:
         return 0
     else:
-        i = 75
-        x1 = float(Positions.loc[i][0])
-        y1 = float(Positions.loc[i][1])
-        z1 = float(Positions.loc[i][2])
+        if Mol =='H2O' or Mol =='CO2':
+            i = 75
+            x1 = float(Positions.loc[i][0])
+            y1 = float(Positions.loc[i][1])
+            z1 = float(Positions.loc[i][2])
     
-        x2 = float(Positions.loc[i+1][0])
-        y2 = float(Positions.loc[i+1][1])
-        z2 = float(Positions.loc[i+1][2])
+            x3 = float(Positions.loc[i+1][0])
+            y3 = float(Positions.loc[i+1][1])
+            z3 = float(Positions.loc[i+1][2])
     
-        x3 = float(Positions.loc[i+2][0])
-        y3 = float(Positions.loc[i+2][1])
-        z3 = float(Positions.loc[i+2][2]) 
+            x2 = float(Positions.loc[i+2][0])
+            y2 = float(Positions.loc[i+2][1])
+            z2 = float(Positions.loc[i+2][2]) 
+        elif Mol=='CH4':
+            i = 75
+            x1 = float(Positions.loc[i][0])
+            y1 = float(Positions.loc[i][1])
+            z1 = float(Positions.loc[i][2])
+            x3 = float(Positions.loc[i+1][0])
+            y3 = float(Positions.loc[i+1][1])
+            z3 = float(Positions.loc[i+1][2]) 
+            x2 = float(Positions.loc[79][0])
+            y2 = float(Positions.loc[79][1])
+            z2 = float(Positions.loc[79][2])
 
     a = np.array([x1,y1,z1])
     b = np.array([x2,y2,z2])
@@ -195,8 +238,8 @@ def Angulo():
 
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     angle = np.arccos(cosine_angle)
-    
-    return np.degrees(angle)
+    angle = np.degrees(angle) 
+    return angle
 
 
 
@@ -218,20 +261,31 @@ def InfoMol():
     return Molecules, MoS25x5
 
 #---Extrai a energia de adsorção---#
-def Adsorption_energy(IndexMol):
+def Adsorption_energy(Mol):
     EnergyAdsorbed = Enmax()
     Molecules, MoS25x5 = InfoMol()
-    MolEnergy= Molecules.loc[0,'Energy__w']
+    if Mol=='H2':
+        IndexMol = 0
+    elif Mol=='O2':
+        IndexMol = 1
+    elif Mol=='N2':
+        IndexMol = 2
+    elif Mol=='CO2':
+        IndexMol = 5
+    elif Mol=='H2O':
+        IndexMol = 8
+    elif Mol=='CH4':
+        IndexMol = 11
+    MolEnergy= Molecules.loc[IndexMol,'Energy__w']
     LayerEnergy = MoS25x5.loc[0,'Energy_w']
     AdsorptionEnergy = float(EnergyAdsorbed) - float(MolEnergy) - float(LayerEnergy)
-    #print(EnergyAdsorbed, MolEnergy, LayerEnergy)
     return AdsorptionEnergy
 
 #---Navega entre os diretórios para extrair informações---#
 def NavigateDir():
     FileTEX = open('table.tex','w')
     FileTEX.write('Configuration & E_{tot} (eV) & E_{Ads} & H (\AA) & Dist & Angle  \\\ \n')
-    Molecules=['CH4','CO2','H2','H2O','N2','O2']
+    Molecules=['CH4','H2O','H2','N2','CO2','O2']
     RootMol = os.getcwd()
     for Mol in Molecules:
         os.chdir(Mol)
@@ -246,16 +300,14 @@ def NavigateDir():
                 Check = CheckStringInFile('OUTCAR','reached required accuracy - stopping structural energy minimisation')
                 if Check ==True:
                     EnergyAdsorbed = Enmax() 
-                    Altura = Hight()
-                    AdsorptionEnergy=0
-                    Dist = 0
-                    Angle = Angulo()  
-                    FileTEX.write('{} & {} & {} & {} & {} & {} \\\ \n'.format(str(Folder),float(EnergyAdsorbed), float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
+                    Altura = round(Hight(),2)
+                    AdsorptionEnergy = Adsorption_energy(Mol)
+                    Dist = round(Distance(Mol),2)
+                    Angle = round(Angulo(Mol),1)  
+                    FileTEX.write('{} & {} & {} & {} & {} \\\ \n'.format(str(Folder),float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
                 else:
                     FileTEX.write('{} & Não Convergiu & Não Convergiu & Não Convergiu  & Não Convergiu  \\\ \n'.format(Folder))
-            else:
-                FileTEX.write('{} & Não Rodou & Não Rodou & Não Rodou & Não Rodou  \\\ \n'.format(Folder))
-
+            
             os.chdir(Root)
         os.chdir(RootMol)    
 def main():    
