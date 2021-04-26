@@ -281,7 +281,7 @@ def Adsorption_energy(Mol):
 #---Navega entre os diretórios para extrair informações---#
 def NavigateDir():
     FileTEX = open('table.tex','w')
-    FileTEX.write('\\begin{longtable}{ccccc} \n')
+    FileTEX.write('\\hline \n \\begin{longtable}{cp{0.5\\textwidth}ccc} \n')
     FileTEX.write('Configuration &  $E_{Ads}$ & H (\AA) & Dist & Angle  \\\ \n')
     Molecules=['CH4','H2O','H2','N2','CO2','O2']
     RootMol = os.getcwd()
@@ -304,12 +304,13 @@ def NavigateDir():
                     Angle = round(Angulo(Mol),1)
                     Path = Folder.replace('./','')
                     Path = Path.replace('/','-')
-                    FileTEX.write('{} & \\tablenum{{{}}}& \\tablenum{{{}}}& \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(str(Path),float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
+                    FileTEX.write('{} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(str(Path),float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
                 else:
                     FileTEX.write('{{ {} }} & Não Convergiu & Não Convergiu & Não Convergiu  & Não Convergiu  \\\ \n'.format(Folder))
             os.chdir(Root)
         os.chdir(RootMol)
     FileTEX.write('\\end{longtable} \n')
+
 def main():    
     NavigateDir()
     
