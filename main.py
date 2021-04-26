@@ -237,8 +237,14 @@ def Angulo(Mol):
     angle = np.arccos(cosine_angle)
     angle = np.degrees(angle) 
     return angle
-
-
+def LineLowestValue(List,col):
+    menor = List[0][col]
+    LinhaMenor=0
+    for i in range(len(List)):
+        if List[i][col] < menor:
+            menor = List[i][col]
+            LinhaMenor=i
+    return LinhaMenor
 
 #---Informações das moléculas que podem ser usadas para alguns cálculos---#
 def InfoMol():
@@ -283,13 +289,15 @@ def NavigateDir():
     FileTEX = open('table.tex','w')
     FileTEX.write('\\hline \n \\begin{longtable}{cp{0.5\\textwidth}ccc} \n')
     FileTEX.write('Configuration &  $E_{Ads}$ & H (\AA) & Dist & Angle  \\\ \n')
-    Molecules=['CH4','H2O','H2','N2','CO2','O2']
+    Molecules=['H2', 'O2', 'N2', 'H2O', 'CO2', 'CH4']
     RootMol = os.getcwd()
     for Mol in Molecules:
+        ValuestoPrint=[]
         os.chdir(Mol)
-        FileTEX.write('\hline \n \\multicolumn{{5}}{{c}}{{{}}} \\\ \n \hline \n'.format(Mol))
+        FileTEX.write('\\hline \n \\multicolumn{{5}}{{c}}{{{}}} \\\ \n \\hline \n'.format(Mol))
         Root = os.getcwd()
-        Folders = [x[0] for x in os.walk('.')]    
+        Folders = [x[0] for x in os.walk('.')]
+          
         for Folder in Folders:
             os.chdir(Folder)
             print(Folder)
@@ -304,10 +312,15 @@ def NavigateDir():
                     Angle = round(Angulo(Mol),1)
                     Path = Folder.replace('./','')
                     Path = Path.replace('/','-')
-                    FileTEX.write('{} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(str(Path),float(AdsorptionEnergy), float(Altura), float(Dist), float(Angle)))
-                else:
-                    FileTEX.write('{{ {} }} & Não Convergiu & Não Convergiu & Não Convergiu  & Não Convergiu  \\\ \n'.format(Folder))
+                    ValuestoPrint.append([str(Path), float(AdsorptionEnergy), float(Altura), float(Dist),float(Angle)])
             os.chdir(Root)
+        LineMenorEads = LineLowestValue(ValuestoPrint,1)
+        for i in range(len(ValuestoPrint)):
+            if LineMenorEads == i:
+                FileTEX.write('\\textbf{{ {} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1],ValuestoPrint[i][2],ValuestoPrint[i][3],ValuestoPrint[i][4]))
+            else:
+                FileTEX.write('{} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1], ValuestoPrint[i][2], ValuestoPrint[i][3], ValuestoPrint[i][4]))
+
         os.chdir(RootMol)
     FileTEX.write('\\end{longtable} \n')
 
