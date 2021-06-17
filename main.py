@@ -160,60 +160,71 @@ def Hight():
 def Distance(Mol):
     positions = AtomsInfo()
     LenPositions = int(len(positions))
-    if Mol =='H2' or Mol=='N2' or Mol =='O2': 
+    if Mol =='H2' or Mol=='N2' or Mol =='O2' or Mol=='NO' or Mol=='CO':
         i = 75
         xAtom1 = positions['x'][i]
         yAtom1 = positions['y'][i]
         zAtom1 = positions['z'][i]
-        
+
         xAtom2 = positions['x'][i+1]
         yAtom2 = positions['y'][i+1]
-        zAtom2 = positions['z'][i+1]        
-        
-    elif Mol=='H2O' or Mol =='CO2': 
+        zAtom2 = positions['z'][i+1]
+
+    elif Mol=='H2O' or Mol =='CO2':
         i = 75
         xAtom1 = positions['x'][i]
         yAtom1 = positions['y'][i]
         zAtom1 = positions['z'][i]
-        
+
         xAtom2 = positions['x'][i+2]
         yAtom2 = positions['y'][i+2]
-        zAtom2 = positions['z'][i+2]        
-        
+        zAtom2 = positions['z'][i+2]
+
+    elif Mol=='NH3':
+        i = 75
+        xAtom1 = positions['x'][i]
+        yAtom1 = positions['y'][i]
+        zAtom1 = positions['z'][i]
+
+        xAtom2 = positions['x'][i+2]
+        yAtom2 = positions['y'][i+2]
+        zAtom2 = positions['z'][i+2]
+
     elif Mol=='CH4':
-        i =75 
+        i =75
         xAtom1 = positions['x'][i+1]
         yAtom1 = positions['y'][i+1]
         zAtom1 = positions['z'][i+1]
-        
+
         xAtom2 = positions['x'][i+4]
         yAtom2 = positions['y'][i+4]
-        zAtom2 = positions['z'][i+4]        
+        zAtom2 = positions['z'][i+4]
 
     v1 = np.matrix([xAtom1, yAtom1, zAtom1])
     v2 = np.matrix([xAtom2, yAtom2, zAtom2])
-        
+
     DistanceMol = np.linalg.norm(v1-v2)
     return DistanceMol
+
 
 def Angulo(Mol):
     Positions = AtomsInfo()
     if len(Positions) == 77:
         return 0
     else:
-        if Mol =='H2O' or Mol =='CO2':
+        if Mol =='H2O' or Mol =='CO2' or Mol=='N2O':
             i = 75
             x1 = float(Positions.loc[i][0])
             y1 = float(Positions.loc[i][1])
             z1 = float(Positions.loc[i][2])
-    
+
             x3 = float(Positions.loc[i+1][0])
             y3 = float(Positions.loc[i+1][1])
             z3 = float(Positions.loc[i+1][2])
-    
+
             x2 = float(Positions.loc[i+2][0])
             y2 = float(Positions.loc[i+2][1])
-            z2 = float(Positions.loc[i+2][2]) 
+            z2 = float(Positions.loc[i+2][2])
         elif Mol=='CH4':
             i = 75
             x1 = float(Positions.loc[i][0])
@@ -221,10 +232,21 @@ def Angulo(Mol):
             z1 = float(Positions.loc[i][2])
             x3 = float(Positions.loc[i+1][0])
             y3 = float(Positions.loc[i+1][1])
-            z3 = float(Positions.loc[i+1][2]) 
+            z3 = float(Positions.loc[i+1][2])
             x2 = float(Positions.loc[79][0])
             y2 = float(Positions.loc[79][1])
             z2 = float(Positions.loc[79][2])
+        elif Mol=='NH3':
+            i = 75
+            x1 = float(Positions.loc[i][0])
+            y1 = float(Positions.loc[i][1])
+            z1 = float(Positions.loc[i][2])
+            x3 = float(Positions.loc[i+1][0])
+            y3 = float(Positions.loc[i+1][1])
+            z3 = float(Positions.loc[i+1][2])
+            x2 = float(Positions.loc[i+2][0])
+            y2 = float(Positions.loc[i+2][1])
+            z2 = float(Positions.loc[i+2][2])
 
     a = np.array([x1,y1,z1])
     b = np.array([x2,y2,z2])
@@ -235,8 +257,11 @@ def Angulo(Mol):
 
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     angle = np.arccos(cosine_angle)
-    angle = np.degrees(angle) 
+    angle = np.degrees(angle)
     return angle
+
+
+
 def LineLowestValue(List,col):
     menor = List[0][col]
     LinhaMenor=0
@@ -273,23 +298,33 @@ def Adsorption_energy(Mol):
         IndexMol = 1
     elif Mol=='N2':
         IndexMol = 2
+    elif Mol=='CO':
+        IndexMol= 3 
+    elif Mol=='NO':
+        IndexMol= 4    
     elif Mol=='CO2':
         IndexMol = 5
+    elif Mol=='N2O':
+        IndexMol= 7    
     elif Mol=='H2O':
         IndexMol = 8
+    elif Mol=='NH3':
+        IndexMol=9    
     elif Mol=='CH4':
         IndexMol = 11
+   
     MolEnergy= Molecules.loc[IndexMol,'Energy__w']
     LayerEnergy = MoS25x5.loc[0,'Energy_w']
     AdsorptionEnergy = float(EnergyAdsorbed) - float(MolEnergy) - float(LayerEnergy)
     return AdsorptionEnergy
 
+
 #---Navega entre os diretórios para extrair informações---#
 def NavigateDir():
     FileTEX = open('table.tex','w')
-    FileTEX.write('\\hline \n \\begin{longtable}{cp{0.5\\textwidth}ccc} \n')
-    FileTEX.write('Configuration &  $E_{Ads}$ & H (\AA) & Dist & Angle  \\\ \n')
-    Molecules=['H2', 'O2', 'N2', 'H2O', 'CO2', 'CH4']
+    FileTEX.write('\\begin{longtable}{ccccc} \n')
+    FileTEX.write('\hline Configuration &  $E_{Ads}$ & H (\AA) & Dist & Angle  \\\ \n')
+    Molecules=['CH4','CO','CO2','H2','H2O','N2','NH3','NO','O2']
     RootMol = os.getcwd()
     for Mol in Molecules:
         ValuestoPrint=[]
@@ -317,11 +352,12 @@ def NavigateDir():
         LineMenorEads = LineLowestValue(ValuestoPrint,1)
         for i in range(len(ValuestoPrint)):
             if LineMenorEads == i:
-                FileTEX.write('\\textbf{{ {} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1],ValuestoPrint[i][2],ValuestoPrint[i][3],ValuestoPrint[i][4]))
+                FileTEX.write('\\textbf{{ {} }} & \\textbf{{ \\num{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1],ValuestoPrint[i][2],ValuestoPrint[i][3],ValuestoPrint[i][4]))
             else:
-                FileTEX.write('{} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1], ValuestoPrint[i][2], ValuestoPrint[i][3], ValuestoPrint[i][4]))
+                FileTEX.write('{} & \\num{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1], ValuestoPrint[i][2], ValuestoPrint[i][3], ValuestoPrint[i][4]))
 
         os.chdir(RootMol)
+    FileTEX.write('\\hline') 
     FileTEX.write('\\end{longtable} \n')
 
 def main():    
