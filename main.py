@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Feb 27 13:36:16 2021
-Programa para extrair informações do vasp
-@author: natan
-"""
+
+    #############################################
+    #  Programa para extração de Informações    #
+    #  do VASP                                  #
+    #  Autor: Natan Moreira Regis               #
+    #  Ultima Atualização: 22 jun 2021          #
+    #############################################
 
 #---Modulos---#
-
-# Definição de modulos para a execussão do programa
-
 import xml.etree.ElementTree as ET # ler o xml
 import pandas as pd # Prático para criar uns dataframe
 from math import sqrt
@@ -17,22 +16,22 @@ import numpy as np
 import os  # Usado para navegar entre diretorios
 import sys
 
-
 #---Opções Gobais---#
 pd.set_option("display.max_rows", None, "display.max_columns", None)# Imprime todo dataframe
-
 
 #---Pharser do xml---#
 def xmlpharser():
     tree = ET.parse('vasprun.xml')
     root = tree.getroot()
-    return root #Retorna a arvore do xml 
-#---Pharser de qualquer arquivos---#   
+    return root #Retorna a arvore do xml
+
+#---Pharser de qualquer arquivos---#
 def openfile(filename):
     file = open(filename, 'r')
     lines = file.readlines()
     return lines
-#---Checar se uma string está no arquivo---#    
+
+#---Checar se uma string está no arquivo---#
 def CheckStringInFile(File,String):
     with open(File) as f:
         datafile = f.readlines()
@@ -56,7 +55,6 @@ def BasisInfo():
         basis.append([x, y, z])
     return basis
 
-
 #---Informações dos átomos final---#
 def AtomsInfo():
     basis = BasisInfo()
@@ -65,8 +63,8 @@ def AtomsInfo():
     species = root.findall("atominfo/array[@name='atoms']/set/rc/c[1]")
     elements=[]
     for element in species:
-        elements.append(element.text)    
-    basis = np.matrix(basis)    
+        elements.append(element.text)
+    basis = np.matrix(basis)
     position=[]
     i = 0
     for v in atoms:
@@ -75,17 +73,17 @@ def AtomsInfo():
         z = float(v.text.split()[2])
         position.append([x, y, z])
         i = i+1
-    position = np.matrix(position) 
+    position = np.matrix(position)
     position = position*basis
     positions = pd.DataFrame(position, columns=(['x','y','z']))
     positions['Atom'] = elements
     #print(positions)
     return positions
 
-#---Verifica se tudo certo com ecutoff        
-def Ecutoff():  
+#---Verifica se tudo certo com ecutoff---#
+def Ecutoff():
     root = xmlpharser()
-    ENCUT_default = float(488.73400) 
+    ENCUT_default = float(488.73400)
     ENCUT = root.findall("incar/i[@name='ENCUT']")[0]
     ENCUT = float(ENCUT.text)
     if ENCUT == ENCUT_default:
@@ -94,7 +92,7 @@ def Ecutoff():
         print('Incorrect ENCUT!')
         print('erro na conta....')
         sys.exit()
-    return ENCUT    
+    return ENCUT
 
 #---Enegia total---#
 def Enmax():
@@ -105,6 +103,7 @@ def Enmax():
     EEotEWntropy = float(EEotEWntropy.text)
     return EEotEWntropy
 
+#---Energia de Fermi---#
 def FermiEnergy():
     lines = openfile('OUTCAR')
     Linesefermi = []
@@ -116,25 +115,24 @@ def FermiEnergy():
     #print('Fermi energy',efermi)
     return float(efermi)
 
-
-#---Parâmetro de rede---#
-def a0():    
-    positions = AtomsInfo()      
-    dist = []     
+#---Parâmetro de rede (a0)---#
+def a0():
+    positions = AtomsInfo()
+    dist = []
     for i in range(0,25-1,1):
-        x1 = float(positions.loc[i][0]) 
+        x1 = float(positions.loc[i][0])
         y1 = float(positions.loc[i][1])
         z1 = float(positions.loc[i][2])
         v1 = np.matrix([x1, y1, z1])
         for i in range (0,25-1,1):
             x2 = float(positions.loc[i][0])
             y2 = float(positions.loc[i][1])
-            z2 = float(positions.loc[i][2])    
+            z2 = float(positions.loc[i][2])
             v2 = np.matrix([x2, y2, z2])
             dist.append(np.linalg.norm(v1-v2))
     dist = sorted(dist)
     dist = min(numero for numero in dist if numero != 0) # Menor distância excluindo zero
-    return dist 
+    return dist
 
 #---Altura das moleculas para layer---#
 def Hight():
@@ -157,6 +155,74 @@ def Hight():
     H = np.linalg.norm(zS-zMed)
     return H
 
+#---Distância Centro Molecula atomos de Mo--->
+def DistCenterMolMo():
+    positions = AtomsInfo()
+    LenPositions = int(len(positions))
+    p = 0
+    x = 0
+    y = 0
+    z = 0
+    for i in range(75,LenPositions):
+        x = x + positions['x'][i]
+        y = y + positions['y'][i]
+        z = z + positions['z'][i]
+        i = i+1
+        p = p+1
+    xMed = x/float(p)
+    yMed = y/float(p)
+    zMed = z/float(p)
+
+    dist=[]
+    for i in range(1,26):
+        xMo = positions['x'][i]
+        yMo = positions['y'][i]
+        zMo = positions['z'][i]
+
+        xMoltoMo = np.linalg.norm(xMo-xMed)
+        yMoltoMo = np.linalg.norm(yMo-yMed)
+        zMoltoMo = np.linalg.norm(zMo-zMed)
+
+        Dist= np.sqrt(float(xMoltoMo)**2+float(yMoltoMo)**2 + float(zMoltoMo)**2)
+        dist.append(Dist)
+
+    Dist = sorted(dist)
+    Dist = min(numero for numero in dist if numero != 0)
+
+    return Dist
+
+#---Distância Centro Molecula atomos de S--->
+def DistCenterMolS():
+    positions = AtomsInfo()
+    LenPositions = int(len(positions))
+    p = 0
+    x = 0
+    y = 0
+    z = 0
+    for i in range(75,LenPositions):
+        x = x + positions['x'][i]
+        y = y + positions['y'][i]
+        z = z + positions['z'][i]
+        i = i+1
+        p = p+1
+    xMed = x/float(p)
+    yMed = y/float(p)
+    zMed = z/float(p)
+    dist=[]
+    for i in range(27,77):
+        xS = positions['x'][i]
+        yS = positions['y'][i]
+        zS = positions['z'][i]
+        xMoltoS = np.linalg.norm(xS-xMed)
+        yMoltoS = np.linalg.norm(yS-yMed)
+        zMoltoS = np.linalg.norm(zS-zMed)
+        Dist = np.sqrt(float(xMoltoS)**2+float(yMoltoS)**2 + float(zMoltoS)**2)
+        dist.append(Dist)
+    Dist = sorted(dist)
+    Dist = min(numero for numero in dist if numero != 0)
+    return Dist
+
+#---Distância interatômica das moléculas--->
 def Distance(Mol):
     positions = AtomsInfo()
     LenPositions = int(len(positions))
@@ -206,7 +272,7 @@ def Distance(Mol):
     DistanceMol = np.linalg.norm(v1-v2)
     return DistanceMol
 
-
+#---Angulo moleculas---#
 def Angulo(Mol):
     Positions = AtomsInfo()
     if len(Positions) == 77:
@@ -260,8 +326,7 @@ def Angulo(Mol):
     angle = np.degrees(angle)
     return angle
 
-
-
+#---Menor valor de uma lista---#
 def LineLowestValue(List,col):
     menor = List[0][col]
     LinhaMenor=0
@@ -271,19 +336,19 @@ def LineLowestValue(List,col):
             LinhaMenor=i
     return LinhaMenor
 
-#---Informações das moléculas que podem ser usadas para alguns cálculos---#
+#---Informações das moléculas---#
 def InfoMol():
     Molecules = ({
-    'Molecule': ['H2', 'O2', 'N2', 'CO', 'NO', 'CO2', 'NO2', 'N2O', 'H2O', 'NH3', 'SO2', 'CH4'],    
-    'Energy__w': [-6.75643835, -9.99914716, -16.77964988, -14.90957902, -12.39910767, -23.17391481, -18.58684634, -21.57542293, -14.26654709, -19.53889317, -17.01184620, -24.03235987], 
+    'Molecule': ['H2', 'O2', 'N2', 'CO', 'NO', 'CO2', 'NO2', 'N2O', 'H2O', 'NH3', 'SO2', 'CH4'],
+    'Energy__w': [-6.75643835,-9.99914716, -16.77964988, -14.90957902, -12.39910767, -23.17391481, -18.58684634, -21.57542293, -14.26654709, -19.53889317, -17.01184620, -24.03235987],
     'Distance': [0.75243, 1.22470, 1.10606, 1.13830, 1.16232, 1.17272, 1.20745, [1.19360, 1.13997], 0.97084, 1.02255, 1.45386, 1.09666],
-     'Angle': [None, None, None, None, None, 180., 134.0, 180, 104.0, 106.1, 119.4, 109.5]       
-        } ) 
+     'Angle': [None, None, None, None, None, 180., 134.0, 180, 104.0, 106.1, 119.4, 109.5]
+        } )
     Molecules = pd.DataFrame(Molecules)
     MoS25x5 = ({
         'System': ['Pristine 5x5', 'Defective 5x5'],
         'Energy_w':[-577.73633023, -570.79075056],
-        'a0': [3.16073, 3.04771],       
+        'a0': [3.16073, 3.04771],
         })
     MoS25x5 = pd.DataFrame(MoS25x5)
     return Molecules, MoS25x5
@@ -299,40 +364,41 @@ def Adsorption_energy(Mol):
     elif Mol=='N2':
         IndexMol = 2
     elif Mol=='CO':
-        IndexMol= 3 
+        IndexMol= 3
     elif Mol=='NO':
-        IndexMol= 4    
+        IndexMol= 4
     elif Mol=='CO2':
         IndexMol = 5
     elif Mol=='N2O':
-        IndexMol= 7    
+        IndexMol= 7
     elif Mol=='H2O':
         IndexMol = 8
     elif Mol=='NH3':
-        IndexMol=9    
+        IndexMol=9
     elif Mol=='CH4':
         IndexMol = 11
-   
+
     MolEnergy= Molecules.loc[IndexMol,'Energy__w']
     LayerEnergy = MoS25x5.loc[0,'Energy_w']
     AdsorptionEnergy = float(EnergyAdsorbed) - float(MolEnergy) - float(LayerEnergy)
     return AdsorptionEnergy
 
-
 #---Navega entre os diretórios para extrair informações---#
 def NavigateDir():
     FileTEX = open('table.tex','w')
-    FileTEX.write('\\begin{longtable}{ccccc} \n')
-    FileTEX.write('\hline Configuration &  $E_{Ads}$ & H (\AA) & Dist & Angle  \\\ \n')
-    Molecules=['CH4','CO','CO2','H2','H2O','N2','NH3','NO','O2']
+    FileTEX.write('\\begin{longtable}{ccccccc} \n')
+    FileTEX.write('\hline Configuration & $E_{Tot}$ (eV) & $E_{Ads}$ (eV) & D-\\ce{Mo} (\AA) & D-\\ce{S} (\AA) & d(\AA) & Angle (degrees) \\\ \n')
+    Molecules=['H2','CH4','CO','CO2','H2O','N2','NH3','NO','O2']
+    #Molecules=['CO']
     RootMol = os.getcwd()
+    MinusValueEads=[]
     for Mol in Molecules:
         ValuestoPrint=[]
         os.chdir(Mol)
-        FileTEX.write('\\hline \n \\multicolumn{{5}}{{c}}{{{}}} \\\ \n \\hline \n'.format(Mol))
+        FileTEX.write('\\hline \n \\multicolumn{{7}}{{c}}{{{}}} \\\ \n \\hline \n'.format(Mol))
         Root = os.getcwd()
         Folders = [x[0] for x in os.walk('.')]
-          
+
         for Folder in Folders:
             os.chdir(Folder)
             print(Folder)
@@ -340,30 +406,41 @@ def NavigateDir():
             if 'vasprun.xml' in Files:
                 Check = CheckStringInFile('OUTCAR','reached required accuracy - stopping structural energy minimisation')
                 if Check ==True:
-                    EnergyAdsorbed = Enmax() 
-                    Altura = round(Hight(),2)
-                    AdsorptionEnergy = Adsorption_energy(Mol)
+                    EnergyAdsorbed = round(Enmax(),8)
+                    #Altura = round(Hight(),2)
+                    AdsorptionEnergy = round(Adsorption_energy(Mol),4)
                     Dist = round(Distance(Mol),2)
-                    Angle = round(Angulo(Mol),1)
+                    DistoMo = round(DistCenterMolMo(),2)
+                    DistoS = round(DistCenterMolS(),2)
+                    Angle = round(Angulo(Mol),2)
                     Path = Folder.replace('./','')
                     Path = Path.replace('/','-')
-                    ValuestoPrint.append([str(Path), float(AdsorptionEnergy), float(Altura), float(Dist),float(Angle)])
+                    ValuestoPrint.append([str(Path), float(EnergyAdsorbed), float(AdsorptionEnergy), float(DistoMo), float(DistoS) , float(Dist), float(Angle)])
+                    MinusValueEads.append([float(AdsorptionEnergy),str(Path)])
             os.chdir(Root)
         LineMenorEads = LineLowestValue(ValuestoPrint,1)
         for i in range(len(ValuestoPrint)):
             if LineMenorEads == i:
-                FileTEX.write('\\textbf{{ {} }} & \\textbf{{ \\num{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1],ValuestoPrint[i][2],ValuestoPrint[i][3],ValuestoPrint[i][4]))
+                FileTEX.write('\\textbf{{ {} }} & \\num{{{}}} &\\textbf{{ \\num{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }} & \\textbf{{ \\tablenum{{{}}} }}  \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1],ValuestoPrint[i][2],ValuestoPrint[i][3],ValuestoPrint[i][4], ValuestoPrint[i][5], ValuestoPrint[i][6] ))
             else:
-                FileTEX.write('{} & \\num{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1], ValuestoPrint[i][2], ValuestoPrint[i][3], ValuestoPrint[i][4]))
+                FileTEX.write('{} & \\num{{{}}} & \\num{{{}}} &\\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} & \\tablenum{{{}}} \\\ \n'.format(ValuestoPrint[i][0], ValuestoPrint[i][1], ValuestoPrint[i][2], ValuestoPrint[i][3], ValuestoPrint[i][4], ValuestoPrint[i][5], ValuestoPrint[i][6]))
 
         os.chdir(RootMol)
-    FileTEX.write('\\hline') 
+
+    for i in range(len(MinusValueEads)):
+        MinusValue = 0
+        if MinusValueEads[i][0]<0:
+            if abs(MinusValueEads[i][0]) > MinusValue:
+                MinusValue = abs(MinusValueEads[i][0])
+                res = i
+    print("menorEads:",MinusValueEads[res][1],':',MinusValueEads[res][0])
+
+    FileTEX.write('\\hline')
     FileTEX.write('\\end{longtable} \n')
 
-def main():    
+#---Função main do programa---#
+def main():
     NavigateDir()
-    
+
 if __name__ == "__main__":
-    main();  
-    
-    
+    main();
